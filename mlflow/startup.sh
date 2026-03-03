@@ -1,9 +1,9 @@
 #!/bin/bash
 echo 'starting mlflow server...'
 echo "upgrading mlflow db schema..."
-exec mlflow db upgrade "$DB_URI"
+mlflow db upgrade "$DB_URI"
 exec mlflow server \
-    --backend-store-uri $DB_URL \
+    --backend-store-uri $DB_URI \
     --artifacts-destination s3://bucket \
     --host :: \
     --port ${PORT:-5000}
