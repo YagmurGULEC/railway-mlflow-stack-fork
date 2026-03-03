@@ -1,7 +1,7 @@
 services:
   # PostgreSQL database
   postgres:
-    image: postgres:latest
+    image: postgres:17
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -11,21 +11,21 @@ services:
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d mlflowdb"]
+      test: [ "CMD-SHELL", "pg_isready -U user -d mlflowdb" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  minio: 
-    build: 
-      context: ./minio 
+  minio:
+    build:
+      context: ./minio
       dockerfile: dockerfile
     restart: unless-stopped
     ports:
       - "9000:9000"
       # MinIO Console is available at http://localhost:9001
       - "9001:9001"
-    volumes: 
+    volumes:
       - ./minio/data:/minio/data
     environment:
       MINIO_ROOT_USER: "minio_user"
@@ -35,28 +35,29 @@ services:
       interval: 1s
       timeout: 10s
       retries: 5
-    
-  mlflow: 
-    build: 
+
+  mlflow:
+    build:
       context: ./mlflow
       dockerfile: dockerfile
     restart: unless-stopped
-    depends_on: 
-      minio: 
+    depends_on:
+      minio:
         condition: service_healthy
       postgres:
         condition: service_healthy
     # Port removed - only accessible through Caddy auth proxy
-    # ports: 
+    # ports:
     #   - 5000:5000
-    environment: 
+    environment:
       DB_URL: "postgresql://user:password@postgres:5432/mlflowdb"
       MLFLOW_S3_ENDPOINT_URL: "http://minio:9000"
       AWS_ACCESS_KEY_ID: "minio_user"
       AWS_SECRET_ACCESS_KEY: "minio_password"
+      MLFLOW_SERVER_ALLOWED_HOSTS: "localhost:*,127.0.0.1:*,mlflow:*,caddy:*"
       HOST: "[::]"
       PORT: "5000"
-  
+
   # Caddy reverse proxy with authentication
   caddy:
     build:
@@ -67,7 +68,7 @@ services:
       mlflow:
         condition: service_started
     ports:
-      - "8080:8080"  # Railway will handle SSL termination
+      - "8080:8080" # Railway will handle SSL termination
     environment:
       # Railway will use this to determine service port
       PORT: 8080
@@ -81,7 +82,7 @@ services:
       # OAUTH2_CLIENT_ID: ${OAUTH2_CLIENT_ID}
       # OAUTH2_CLIENT_SECRET: ${OAUTH2_CLIENT_SECRET}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
