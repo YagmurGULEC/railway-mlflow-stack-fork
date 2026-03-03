@@ -1,9 +1,9 @@
-ARG MLFLOW_VERSION=v3.10.0
+ARG MLFLOW_VERSION=v3.9.0
 
-FROM ghcr.io/mlflow/mlflow:${MLFLOW_VERSION}-full
+FROM ghcr.io/mlflow/mlflow:${MLFLOW_VERSION}
 
 # install deps 
-RUN pip install psycopg2-binary boto3
+RUN pip install psycopg2-binary boto3 "mlflow[genai]"
 
 # copy over the startup script 
 RUN mkdir /scripts/ 
